@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Bull OOH — Yangon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --red:#D4001B;--yellow:#FFC200;
+  --dark:#0A0A0A;--grey:#161616;--mid:#222;--border:#2e2e2e;
+  --text:#F0F0F0;--muted:#777;
+  --pw:300px;--hh:54px;--fh:46px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Barlow',sans-serif;background:var(--dark);color:var(--text);display:flex;flex-direction:column}
+
+/* HEADER */
+.hdr{height:var(--hh);background:var(--dark);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;gap:12px}
+.hdr-l{display:flex;align-items:center;gap:11px}
+.logo{width:32px;height:32px;flex-shrink:0}
+.hdr-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;letter-spacing:.5px;color:#fff;text-transform:uppercase;line-height:1}
+.hdr-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.badge{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--yellow);background:rgba(255,194,0,.1);border:1px solid rgba(255,194,0,.28);padding:4px 10px;border-radius:4px;white-space:nowrap;letter-spacing:.5px}
+
+/* FILTERS */
+.filters{height:var(--fh);background:var(--grey);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:6px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.fbtn{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:5px 11px;border-radius:3px;border:1.5px solid;cursor:pointer;background:transparent;white-space:nowrap;transition:opacity .15s,transform .1s;flex-shrink:0}
+.fbtn:hover{transform:translateY(-1px)}
+.fbtn.off{opacity:.22}
+
+/* BODY */
+.body{flex:1;display:flex;min-height:0}
+#map{flex:1;min-width:0}
+
+/* PANEL */
+.panel{width:var(--pw);flex-shrink:0;background:var(--grey);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.p-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;color:var(--muted)}
+.p-empty svg{opacity:.25}
+.p-empty p{font-size:12px;line-height:1.6}
+.p-detail{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:#3a3a3a transparent;display:none}
+.p-detail::-webkit-scrollbar{width:4px}
+.p-detail::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:2px}
+
+/* KV PHOTO */
+.photo-wrap{width:100%;aspect-ratio:16/10;background:var(--mid);border:1.5px dashed var(--border);border-radius:6px;overflow:hidden;position:relative;cursor:pointer;margin-bottom:10px;transition:border-color .2s}
+.photo-wrap:hover{border-color:var(--yellow)}
+.photo-wrap.has-img{border-style:solid;border-color:var(--border);cursor:default}
+.photo-wrap img{width:100%;height:100%;object-fit:contain;display:block;background:#111}
+.upload-hint{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-size:11px;text-align:center;padding:12px;pointer-events:none}
+.photo-wrap.has-img .upload-hint{display:none}
+.upload-hint svg{opacity:.4}
+.photo-btns{display:flex;gap:6px;margin-bottom:14px}
+.btn-up{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:none;cursor:pointer;transition:opacity .15s;white-space:nowrap;background:var(--yellow);color:#000;flex:1}
+.btn-up:hover{opacity:.85}
+.btn-rm{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:5px 10px;border-radius:3px;cursor:pointer;transition:all .15s;white-space:nowrap;background:transparent;border:1px solid #444;color:var(--muted);display:none}
+.btn-rm:hover{border-color:var(--red);color:var(--red)}
+.btn-rm.show{display:block}
+input[type=file]{display:none}
+
+/* DETAIL */
+.cat-tag{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:3px 9px;border-radius:3px;margin-bottom:8px}
+.loc-id{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1}
+.loc-name{font-size:12px;color:var(--muted);margin-top:3px;margin-bottom:12px}
+.divider{height:1px;background:var(--border);margin:10px 0}
+.drow{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start}
+.dico{flex-shrink:0;width:16px;text-align:center;margin-top:1px;opacity:.4}
+.dlbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:2px}
+.dval{font-size:12px;color:var(--text);line-height:1.4}
+.kvbox{background:rgba(255,194,0,.07);border:1px solid rgba(255,194,0,.2);border-radius:5px;padding:9px 11px;margin-top:12px}
+.kvlbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--yellow);margin-bottom:4px}
+.kvval{font-size:12px;color:#fff;font-weight:500;line-height:1.4}
+.kvnone{font-size:12px;color:var(--muted);font-style:italic}
+
+/* EXPORT BUTTON */
+#export-btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:5px 12px;border-radius:3px;border:1px solid rgba(255,194,0,.4);background:rgba(255,194,0,.1);color:var(--yellow);cursor:pointer;white-space:nowrap;transition:all .15s}
+#export-btn:hover{background:var(--yellow);color:#000}
+
+/* Leaflet dark tweaks */
+.leaflet-tile{filter:brightness(.7) saturate(.6)}
+.leaflet-container{background:#0d1117}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-l">
+    <svg class="logo" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="16" fill="#D4001B"/>
+      <ellipse cx="12.5" cy="17" rx="5" ry="7" fill="#FFC200" transform="rotate(-15 12.5 17)"/>
+      <ellipse cx="19.5" cy="15" rx="5" ry="7" fill="#FFC200" transform="rotate(15 19.5 15)"/>
+      <ellipse cx="12.5" cy="17" rx="3.2" ry="5" fill="#D4001B" transform="rotate(-15 12.5 17)"/>
+      <ellipse cx="19.5" cy="15" rx="3.2" ry="5" fill="#D4001B" transform="rotate(15 19.5 15)"/>
+    </svg>
+    <div>
+      <div class="hdr-title">Red Bull OOH — Yangon</div>
+      <div class="hdr-sub">45 locations · 6 categories · click a pin to assign KV</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="badge" id="cnt">All 45</div>
+    <button id="export-btn" onclick="exportWithPhotos()" title="Bake photos into the file so anyone you share it with can see them">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right:5px;vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to share
+    </button>
+  </div>
+</div>
+
+<div class="filters" id="filters"></div>
+
+<div class="body">
+  <div id="map"></div>
+  <div class="panel">
+    <div class="p-empty" id="p-empty">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        <circle cx="12" cy="9" r="2.5"/>
+      </svg>
+      <p>Click any pin to view<br>details &amp; upload a KV photo</p>
+    </div>
+    <div class="p-detail" id="p-detail"></div>
+  </div>
+</div>
+
+<input type="file" id="file-inp" accept="image/*">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const CAT={
+  'Campus & Students':      {c:'#378ADD',bg:'rgba(55,138,221,.15)',tx:'#7DC4FF',bd:'rgba(55,138,221,.3)'},
+  'Urban Lifestyle':        {c:'#D85A30',bg:'rgba(216,90,48,.15)', tx:'#FF9070',bd:'rgba(216,90,48,.3)'},
+  'Parks & Family Leisure': {c:'#5A9E1A',bg:'rgba(90,158,26,.15)', tx:'#9ED44F',bd:'rgba(90,158,26,.3)'},
+  'Sports & Entertainment': {c:'#EF9F27',bg:'rgba(239,159,39,.15)',tx:'#FFC700',bd:'rgba(239,159,39,.3)'},
+  'Culture & Heritage':     {c:'#7F77DD',bg:'rgba(127,119,221,.15)',tx:'#AEA8FF',bd:'rgba(127,119,221,.3)'},
+  'Community & Markets':    {c:'#D4537E',bg:'rgba(212,83,126,.15)',tx:'#FF85AA',bd:'rgba(212,83,126,.3)'},
+};
+
+const LOC=[
+  {id:'C103',  name:'University Avenue Road',twp:'Kamaryut',           type:'1 Vertical (Small)',                    geo:'Near Uni, Hospital and Swimming Pool',       demo:'Uni students, office workers and commuters',       kv:'',cat:'Campus & Students',     lat:16.8261,lng:96.13471},
+  {id:'C428',  name:'Pyay Road',             twp:'Kamaryut',           type:'1 Vertical (Small)',                    geo:'Near College and Hospital',                  demo:'Staff, students and hospital visitors',            kv:'',cat:'Campus & Students',     lat:16.80909,lng:96.13597},
+  {id:'F151S', name:'Kyuan Lan',             twp:'Kamaryut',           type:'2 Vertical (Small) + 2 Vertical (Big)',geo:'Near Yangon University and American Centre',  demo:'Young adults but mostly students',                 kv:'',cat:'Campus & Students',     lat:16.8257696,lng:96.1386364},
+  {id:'F152N', name:'Kyuan Shae',            twp:'Kamaryut',           type:'2 Vertical (Small) + 2 Vertical (Big)',geo:'Near Yangon University and Mall',             demo:'Workers and university students',                  kv:'',cat:'Campus & Students',     lat:16.8264841,lng:96.1321572},
+  {id:'F70EB', name:'Site Pyo Yae',          twp:'Kamaryut',           type:'2 Vertical (Small) + 2 Vertical (Big)',geo:'Near Uni and Hospital',                       demo:'University students and hospital-related visitors',kv:'',cat:'Campus & Students',     lat:16.8182799,lng:96.1332385},
+  {id:'M219W', name:'BPI',                   twp:'Insein',             type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Uni and Market',                        demo:'University students and market seller',            kv:'',cat:'Campus & Students',     lat:16.8744871,lng:96.1165985},
+  {id:'P151S', name:'Kyuan Lan',             twp:'Kamaryut',           type:'2 Vertical (Small)',                    geo:'Near Yangon University and American Centre',  demo:'Young adults but mostly students',                 kv:'',cat:'Campus & Students',     lat:16.8258261,lng:96.1381643},
+  {id:'P69EA', name:'MarLar',                twp:'Kamaryut',           type:'2 Vertical (Small)',                    geo:'Near Yangon University and Mall',             demo:'Young adults but mostly students and shoppers',    kv:'',cat:'Campus & Students',     lat:16.83247,lng:96.1327966},
+  {id:'P66W',  name:'Kyaung Gkwe',           twp:'Hlaing',             type:'2 Vertical (Small)',                    geo:'Near Uni and Mall',                           demo:'Workers and university students',                  kv:'Vertical — Kaung Sithu KV',cat:'Campus & Students',lat:16.8476662,lng:96.1363017},
+  {id:'P66E',  name:'Kyaung Gkwe',           twp:'Hlaing',             type:'2 Vertical (Small)',                    geo:'Near Uni and Mall',                           demo:'Workers and university students',                  kv:'',cat:'Campus & Students',     lat:16.846968,lng:96.1363366},
+  {id:'C5',    name:'Pyay Road',             twp:'Mayangone',          type:'1 Vertical (Small)',                    geo:'Near Uni and Market',                        demo:'University students and market seller',            kv:'',cat:'Campus & Students',     lat:16.8890433,lng:96.1325713},
+
+  {id:'C139',  name:'University Avenue Road',twp:'Kamaryut',           type:'1 Vertical (Small)',                    geo:'Near Uni and Market',                        demo:'University students and market seller',            kv:'',cat:'Campus & Students',     lat:16.82591324,lng:96.13932484},
+  {id:'C33',   name:'U Wisara Road',         twp:'Sanchaung',          type:'1 Vertical (Small)',                    geo:'Near Private Uni and Mall',                  demo:'Workers and university students',                  kv:'',cat:'Campus & Students',     lat:16.8129908,lng:96.1349524},
+  {id:'C134',  name:'Inya Road',             twp:'Kamaryut',           type:'1 Vertical (Small)',                    geo:'Restaurant, Hi-So',                          demo:'Many young adults, office workers and middle-income',kv:'',cat:'Urban Lifestyle',      lat:16.8162,lng:96.1394},
+  {id:'C277',  name:'Parami Road',           twp:'Hlaing',             type:'1 Vertical (Small)',                    geo:'Near Mall, Bar',                             demo:'Young adults, shoppers, bar customers',            kv:'',cat:'Urban Lifestyle',      lat:16.8573179,lng:96.1237962},
+  {id:'M013N', name:'Bogalayzay',            twp:'Botataung',          type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Mall and Hotel',                        demo:'Shopping-goer and hotel guests',                   kv:'',cat:'Urban Lifestyle',      lat:16.76920887,lng:96.16572189},
+  {id:'M29E',  name:'Shan Lann',             twp:'Sanchaung',          type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Restaurant, café and bar',               demo:'Young adults and families',                        kv:'',cat:'Urban Lifestyle',      lat:16.8039616,lng:96.1316759},
+  {id:'P128E', name:'Bali Htate',            twp:'Tamwe',              type:'2 Vertical (Small)',                    geo:'Near Mall and cafe',                         demo:'Young adults, shoppers, and café-goers',           kv:'',cat:'Urban Lifestyle',      lat:16.8093246,lng:96.1774068},
+  {id:'P48WB', name:'Lann Ni Lay',           twp:'Bahan',              type:'2 Vertical (Small)',                    geo:'Near Mall, Hotel and Restaurant',             demo:'Tourists, shoppers, and diners',                   kv:'',cat:'Urban Lifestyle',      lat:16.83079,lng:96.1547201},
+  {id:'P504E', name:'Five Star',             twp:'Botataung',          type:'2 Vertical (Small)',                    geo:'Near Secretariat, Market and Mall',           demo:'Office workers, tourists, and shoppers',           kv:'',cat:'Urban Lifestyle',      lat:16.77359772,lng:96.16713806},
+  {id:'P527S', name:'Thayettaw',             twp:'Lanmadaw',           type:'2 Vertical (Small)',                    geo:'Near Mall, Hospital and Cafe',               demo:'Families, patients, and young adults',             kv:'',cat:'Urban Lifestyle',      lat:16.7797662,lng:96.1453867},
+  {id:'P52E',  name:'Chaw Twin Gone',        twp:'Mayangone',          type:'2 Vertical (Small)',                    geo:'Near Mall and Hospital',                     demo:'Shoppers, medical visitors, and staff',            kv:'Just Freelancer alone KV',cat:'Urban Lifestyle',lat:16.8512411,lng:96.15768},
+  {id:'M52E',  name:'Chaw Twin Gone',        twp:'Mayangone',          type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Mall and Hospital',                     demo:'Shoppers, medical visitors, and staff',            kv:'',cat:'Urban Lifestyle',      lat:16.8521113,lng:96.1575912},
+  {id:'C20',   name:'Pyay Road',             twp:'Kamaryut',           type:'1 Vertical (Small)',                    geo:'Near Restaurant, Uni and Park',              demo:'Numerous families, commuters and park visitors',   kv:'Vertical — Kaung Sithu KV',cat:'Parks & Family Leisure',lat:16.8348378,lng:96.1336817},
+  {id:'C216',  name:'Dhammazedi Road',       twp:'Sanchaung',          type:'1 Vertical (Small)',                    geo:'Near Park, Restaurant',                      demo:'Dining crowd, families and young adults',          kv:'',cat:'Parks & Family Leisure',lat:16.80156,lng:96.13842},
+  {id:'C256',  name:'Paw San Mhwe Road',     twp:'Thingangyun',        type:'1 Vertical (Small)',                    geo:'Near Event Park',                            demo:'Plenty of families, youth, and leisure visitors',  kv:'',cat:'Parks & Family Leisure',lat:16.82,lng:96.203541},
+  {id:'C299',  name:'Kan Yeik Thar Road',    twp:'Mingalartaung Nyunt',type:'1 Vertical (Small)',                    geo:'Near Zoo, Park and Mall',                    demo:'Families, young adults and visitors',              kv:'',cat:'Parks & Family Leisure',lat:16.79432834,lng:96.15962327},
+  {id:'C85',   name:'Zoological Garden Road',twp:'Bahan',              type:'1 Vertical (Small)',                    geo:'Near Zoo and Garden',                        demo:'Families, tourists and visitors',                  kv:'',cat:'Parks & Family Leisure',lat:16.7951131,lng:96.1566594},
+  {id:'M540EA',name:'Thakhin Mya Panchan',   twp:'Ahlon',              type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Hospital and Park',                     demo:'Families, sports fans and visitors',               kv:'',cat:'Parks & Family Leisure',lat:16.7786123,lng:96.135505},
+  {id:'C302',  name:'Kan Yeik Thar Road',    twp:'Mingalartaung Nyunt',type:'1 Vertical (Small)',                    geo:'Near Zoo, Park and Mall',                    demo:'Families, young adults and visitors',              kv:'',cat:'Parks & Family Leisure',lat:16.79331765,lng:96.16277938},
+  {id:'F38WB', name:'Thamada Cinema',        twp:'Dagon',              type:'2 Vertical (Small) + 2 Vertical (Big)',geo:'Near Cinema and Football Stadium',            demo:'Students and sports fans',                         kv:"Kaung Sithu KV — World's No.1 Energy Drink",cat:'Sports & Entertainment',lat:16.7824246,lng:96.1589452},
+  {id:'M55E',  name:'Nawaday',               twp:'Mayangone',          type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Cinema and Pagoda',                     demo:'Worker, visitors and families',                    kv:'',cat:'Sports & Entertainment',lat:16.8677946,lng:96.1512215},
+  {id:'P126E', name:'Ah Khon lut Zay',       twp:'Tamwe',              type:'2 Vertical (Small)',                    geo:'Near Cinema and Hospital',                   demo:'Families, moviegoers, and medical staff',          kv:'',cat:'Sports & Entertainment',lat:16.8125001,lng:96.1759356},
+  {id:'P55W',  name:'Nawaday',               twp:'Mayangone',          type:'2 Vertical (Small)',                    geo:'Near Cinema and Pagoda',                     demo:'Worker, visitors and families',                    kv:'',cat:'Sports & Entertainment',lat:16.8663639,lng:96.1531472},
+  {id:'M34WA', name:'East Moke',             twp:'Dagon',              type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Pagoda',                                demo:'Families, tourists and staff',                     kv:'',cat:'Culture & Heritage',   lat:16.7982454,lng:96.1517403},
+  {id:'M35W',  name:'South-Moke',            twp:'Dagon',              type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Pagoda',                                demo:'Families, young and adults',                       kv:'',cat:'Culture & Heritage',   lat:16.79356,lng:96.15092},
+  {id:'M541EB',name:'Sule City Hall',        twp:'Kyauktada',          type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Pagoda, City Hall and Mall',            demo:'Families, students, young and adults',             kv:'',cat:'Culture & Heritage',   lat:16.7758113,lng:96.1588958},
+  {id:'P36W',  name:'Set Thwel Yae',         twp:'Dagon',              type:'2 Vertical (Small)',                    geo:'Near School and Hospital',                   demo:'Students, parents and medical staff',              kv:'',cat:'Culture & Heritage',   lat:16.78979,lng:96.15213},
+  {id:'P74EB', name:'Yin Pyin',              twp:'Dagon',              type:'2 Vertical (Small)',                    geo:'Near Pagoda, Park and Mall',                 demo:'Tourists, pilgrims and families',                  kv:'',cat:'Culture & Heritage',   lat:16.7977419,lng:96.1390741},
+  {id:'M541ED',name:'Sule City Hall',        twp:'Kyauktada',          type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Pagoda, City Hall and Mall',            demo:'Families, students, young and adults',             kv:'',cat:'Culture & Heritage',   lat:16.7759743,lng:96.1589034},
+  {id:'P34EA', name:'East Moke',             twp:'Bahan',              type:'2 Vertical (Small)',                    geo:'Near Pagoda',                                demo:'Families, young and adults',                       kv:'',cat:'Culture & Heritage',   lat:16.7974283,lng:96.1521233},
+  {id:'M225E', name:'BOC',                   twp:'Insein',             type:'1 Horizontal Face + 2 Vertical Face',  geo:'Near Hospital, School and Market',           demo:'Market sellers, students and visitors',            kv:"Kaung Sithu KV — World's No.1 Energy Drink",cat:'Community & Markets',lat:16.8840158,lng:96.1105781},
+  {id:'P52W',  name:'Chaw Twin Gone',        twp:'Mayangone',          type:'1 Vertical (Small)',                    geo:'Near Mall and Hospital',                     demo:'Shoppers, medical visitors, and staff',            kv:'',cat:'Community & Markets', lat:16.8470369,lng:96.1570213},
+  {id:'C45',   name:'Kabar Aye Pagoda Road', twp:'Hlaing',             type:'1 Vertical (Small)',                    geo:'Near Market and School',                     demo:'Market sellers and students',                      kv:'',cat:'Community & Markets', lat:16.86591,lng:96.153837},
+  {id:'C57',   name:'No 1 Industrial Road',  twp:'Bahan',              type:'1 Vertical (Small)',                    geo:'Near Market',                                demo:'Market sellers and visitors',                      kv:'',cat:'Community & Markets', lat:16.82907,lng:96.1548941},
+];
+
+// ── state ──
+let active=new Set(Object.keys(CAT));
+let selId=null;
+let kvPhotos={};
+try{const s=localStorage.getItem('rb_kv');if(s)kvPhotos=JSON.parse(s);}catch(e){}
+function save(){try{localStorage.setItem('rb_kv',JSON.stringify(kvPhotos));}catch(e){}}
+
+// ── MAP ──
+const map=L.map('map',{zoomControl:true}).setView([16.845,96.140],12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© <a href="https://www.openstreetmap.org/copyright" style="color:#888">OpenStreetMap</a>',
+  maxZoom:19
+}).addTo(map);
+
+let markerMap={};
+
+function mkIcon(color,big){
+  const r=big?10:7,s=(r+3)*2,c=r+3;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${c}" cy="${c}" r="${r}" fill="${color}" stroke="#fff" stroke-width="2.2" filter="drop-shadow(0 1px 4px rgba(0,0,0,.7))"/></svg>`;
+  return L.divIcon({className:'',html:svg,iconSize:[s,s],iconAnchor:[c,c]});
+}
+
+function renderMarkers(){
+  Object.values(markerMap).forEach(m=>map.removeLayer(m));
+  markerMap={};
+  let count=0;
+  LOC.forEach(loc=>{
+    if(!active.has(loc.cat))return;
+    count++;
+    const big=loc.id===selId;
+    const m=L.marker([loc.lat,loc.lng],{icon:mkIcon(CAT[loc.cat].c,big),zIndexOffset:big?1000:0}).addTo(map);
+    m.on('click',()=>selectLoc(loc.id));
+    markerMap[loc.id]=m;
+  });
+  document.getElementById('cnt').textContent=count===45?'All 45':count+' / 45';
+}
+
+function selectLoc(id){
+  selId=id;
+  renderMarkers();
+  showDetail(LOC.find(l=>l.id===id));
+}
+
+// ── DETAIL PANEL ──
+function icon(path){
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${path}</svg>`;
+}
+
+function showDetail(loc){
+  const ct=CAT[loc.cat];
+  const photo=kvPhotos[loc.id]||null;
+  document.getElementById('p-empty').style.display='none';
+  const el=document.getElementById('p-detail');
+  el.style.display='block';
+  el.innerHTML=`
+    <div class="photo-wrap${photo?' has-img':''}" id="pw" onclick="if(!this.classList.contains('has-img'))trigUp()">
+      ${photo?`<img src="${photo}" alt="KV">`:''}
+      <div class="upload-hint">
+        ${icon('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>') }
+        <span>Click to upload KV photo</span>
+      </div>
+    </div>
+    <div class="photo-btns">
+      <button class="btn-up" onclick="trigUp()">↑ Upload KV</button>
+      <button class="btn-rm${photo?' show':''}" id="btnrm" onclick="removePhoto()">Remove</button>
+    </div>
+    <span class="cat-tag" style="background:${ct.bg};color:${ct.tx};border:1px solid ${ct.bd}">${loc.cat}</span>
+    <div class="loc-id">${loc.id}</div>
+    <div class="loc-name">${loc.name}</div>
+    <div class="divider"></div>
+    <div class="drow"><div class="dico">${icon('<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>')}</div><div><div class="dlbl">Township</div><div class="dval">${loc.twp}</div></div></div>
+    <div class="drow"><div class="dico">${icon('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>')}</div><div><div class="dlbl">Format</div><div class="dval">${loc.type}</div></div></div>
+    <div class="drow"><div class="dico">${icon('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>')}</div><div><div class="dlbl">Geographic</div><div class="dval">${loc.geo}</div></div></div>
+    <div class="drow"><div class="dico">${icon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>')}</div><div><div class="dlbl">Demographic</div><div class="dval">${loc.demo}</div></div></div>
+    ${loc.kv?`<div class="kvbox"><div class="kvlbl">KV Asset</div><div class="kvval">${loc.kv}</div></div>`:''}
+  `;
+}
+
+function trigUp(){document.getElementById('file-inp').click();}
+function removePhoto(){
+  if(!selId)return;
+  delete kvPhotos[selId];save();
+  showDetail(LOC.find(l=>l.id===selId));
+}
+
+document.getElementById('file-inp').addEventListener('change',function(e){
+  if(!selId||!e.target.files[0])return;
+  const r=new FileReader();
+  r.onload=ev=>{kvPhotos[selId]=ev.target.result;save();showDetail(LOC.find(l=>l.id===selId));};
+  r.readAsDataURL(e.target.files[0]);
+  e.target.value='';
+});
+
+// ── FILTERS ──
+(function buildFilters(){
+  const fe=document.getElementById('filters');
+  Object.entries(CAT).forEach(([name,v])=>{
+    const b=document.createElement('button');
+    b.className='fbtn';
+    b.style.cssText=`border-color:${v.c};color:${v.tx};background:${v.bg}`;
+    b.textContent=name;
+    b.addEventListener('click',()=>{
+      if(active.has(name)){if(active.size===1)return;active.delete(name);b.classList.add('off');}
+      else{active.add(name);b.classList.remove('off');}
+      renderMarkers();
+    });
+    fe.appendChild(b);
+  });
+})();
+
+renderMarkers();
+setTimeout(()=>map.invalidateSize(),150);
+
+// ── EXPORT (bakes photos into HTML so the file is self-contained) ──
+function exportWithPhotos(){
+  const btn=document.getElementById('export-btn');
+  const orig=btn.innerHTML;
+  btn.textContent='Building…';btn.disabled=true;
+  setTimeout(()=>{
+    try{
+      // Grab the current page HTML
+      const html=document.documentElement.outerHTML;
+      // Find the kvPhotos script injection point — replace the empty init with baked data
+      const photosJSON=JSON.stringify(kvPhotos);
+      // We inject the current photos as pre-loaded state by replacing the init line
+      const patched=html.replace(
+        /let kvPhotos=\{\};\s*try\{.*?catch\(e\)\{\}/s,
+        `let kvPhotos=${photosJSON};`
+      );
+      const blob=new Blob([patched],{type:'text/html'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      const d=new Date();
+      const ds=d.getFullYear()+''+(d.getMonth()+1+'').padStart(2,'0')+(d.getDate()+'').padStart(2,'0');
+      a.download=`redbull_ooh_yangon_${ds}.html`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }catch(err){alert('Export failed: '+err.message);}
+    btn.innerHTML=orig;btn.disabled=false;
+  },50);
+}
+</script>
+</body>
+</html>
